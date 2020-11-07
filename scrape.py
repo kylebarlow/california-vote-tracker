@@ -48,7 +48,7 @@ try:
         county_prop_results['Fetch Time'] = datetime.datetime.now().strftime(date_format)
         prop_results.append( county_prop_results )
 
-        time.sleep( random.randint(1,3) )
+        time.sleep( 1 )
 
         county_pres_results_url = 'https://electionresults.sos.ca.gov/returns/president/county/' + os.path.basename(county_prop_results_url)
         county_pres_results = pd.read_html(county_pres_results_url)
@@ -70,7 +70,7 @@ try:
         county_pres_results['Fetch Time'] = datetime.datetime.now().strftime(date_format)
         pres_results.append(county_pres_results)
 
-        time.sleep( random.randint(1,3) )
+        time.sleep( 1 )
         
     prop_results = pd.concat( prop_results, ignore_index = True, sort = False )
     pres_results = pd.concat( pres_results, ignore_index = True, sort = False )
@@ -93,7 +93,10 @@ try:
     for df_type, df in [('president', pres), ('proposition', prop)]:
         df = pd.concat(df, ignore_index=True, sort=False)
         df['Fetch Time'] = pd.to_datetime( df['Fetch Time'], format=date_format )
-        df = df.sort_values('Fetch Time')
+        # Sort by every column (interesting ones first) to prevent unnecessary git diffs
+        df = df.sort_values(
+            ['Fetch Time', 'County'] + [x for x in df.columns if x not in ['Fetch Time', 'County']]
+        )
         df = df.drop_duplicates([x for x in df.columns if x != 'Fetch Time'])
         df.to_csv( os.path.join(output_path, '%s_summary.csv' % df_type), index=False )
 
