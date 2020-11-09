@@ -1,4 +1,5 @@
 import os
+import sys
 import datetime
 import time
 import random
@@ -21,6 +22,7 @@ start_time = datetime.datetime.now()
 prop_results = []
 pres_results = []
 
+length_not_matching = False
 try:
     for county_name, county_prop_results_url in tqdm(county_urls.items()):
         county_prop_results = pd.read_html(county_prop_results_url)
@@ -98,8 +100,22 @@ try:
             ['Fetch Time', 'County'] + [x for x in df.columns if x not in ['Fetch Time', 'County']]
         )
         df = df.drop_duplicates([x for x in df.columns if x != 'Fetch Time'])
+
+        csv_path = os.path.join(output_path, '%s_summary.csv' % df_type)
+        if os.path.isfile(csv_path):
+            prior_length = len(pd.read_csv(csv_path))
+            if prior_length != len(df):
+                length_not_matching = True
+        else:
+            length_not_matching = True
+
         df.to_csv( os.path.join(output_path, '%s_summary.csv' % df_type), index=False )
 
 except Exception as e:
     with open(os.path.join(output_path, '%s-error.txt' % datetime.datetime.now().strftime(date_format)), 'w' ) as f:
         f.write(str(e))
+
+if length_not_matching:
+    sys.exit(0)
+else:
+    sys.exit(1)
